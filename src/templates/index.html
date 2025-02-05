@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veterinary Chatbot</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="language-switcher">
+        <button id="lang-toggle-ta" class="lang-toggle-button">Tamil</button>
+        <button id="lang-toggle-en" class="lang-toggle-button">English</button>
+    </div>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1 id="chat-header-title">Veterinary Chatbot</h1>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="message-container" id="message-container">
+                <div class="chatbot-response">
+                    <h2 id="welcome-message">Welcome to the Veterinary Chatbot!</h2>
+                    <p id="chatbot-description">I'm here to help answer your questions about veterinary care. Consult a veterinarian for an accurate diagnosis and proper treatment plan.</p>
+                </div>
+            </div>
+            <div class="input-container">
+                <input type="text" id="user-input" placeholder="Type your question here...">
+                <button id="send-button">Send</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Feedback Container -->
+    <div class="feedback-container">
+        <div class="feedback-box">
+            <h3>Provide Feedback</h3>
+            <textarea id="feedback-input" placeholder="Your feedback helps us improve!"></textarea>
+            <button id="feedback-button">Submit Feedback</button>
+        </div>
+    </div>
+
+    <!-- Loading Indicator -->
+    <div class="loading-indicator" id="loading-indicator">
+        <div class="spinner"></div>
+        <p>Analyzing your query...</p>
+    </div>
+
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+</body>
+</html>

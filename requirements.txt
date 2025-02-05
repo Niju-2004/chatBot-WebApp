@@ -1,0 +1,13 @@
+Flask
+hnswlib
+pandas
+numpy
+sentence-transformers
+torch
+google-generativeai
+python-dotenv
+gunicorn
+faiss-cpu
+requests
+googletrans
+matplotlib
