@@ -65,9 +65,9 @@ def store_in_faiss(vectors, structured_data, output_index, content_path):
     logging.info(f"Content data saved to {content_path}")
 
 if __name__ == "__main__":
-    excel_file = r"D:\Rag-Vector-DB\assets\RPP_Dataset - Copy.xlsx"
-    output_index = r"D:\Rag-Vector-DB\DB_Storage\vectors_faiss.index"
-    content_path = r"D:\Rag-Vector-DB\DB_Storage\content.json"
+    excel_file = r"D:\chatBot-WebApp\assets\RPP_Dataset - Copy.xlsx"
+    output_index = r"D:\chatBot-WebApp\DB_Storage\vectors_faiss.index"
+    content_path = r"D:\chatBot-WebApp\DB_Storage\content.json"
 
     model = SentenceTransformer('all-MiniLM-L6-v2')
     structured_data = read_excel(excel_file)

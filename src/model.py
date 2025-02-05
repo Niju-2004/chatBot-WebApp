@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 logging.basicConfig(level=logging.INFO)
 
 # Load .env file
-dotenv_path = r"D:\Rag-Vector-DB\src\.env"  # Ensure raw string format for Windows paths
+dotenv_path = r"D:\chatBot-WebApp\src\.env"  # Ensure raw string format for Windows paths
 load_dotenv(dotenv_path=dotenv_path)
 
 # Get GEMINI API key from environment
@@ -38,8 +38,8 @@ generation_config = {
 model = genai.GenerativeModel("gemini-pro", generation_config=generation_config)
 
 # File paths
-FAISS_INDEX_PATH = r"D:\Rag-Vector-DB\DB_Storage\vectors_faiss.index"
-CONTENT_JSON_PATH = r"D:\Rag-Vector-DB\DB_Storage\content.json"
+FAISS_INDEX_PATH = r"D:\chatBot-WebApp\DB_Storage\vectors_faiss.index"
+CONTENT_JSON_PATH = r"D:\chatBot-WebApp\DB_Storage\content.json"
 
 # Load Sentence Transformer model
 sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
