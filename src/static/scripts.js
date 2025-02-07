@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const data = await response.json();
             if (data.response) {
-                displayMessage(data.response, false);
+                displayMessage(data.response.treatment, false);
             } else {
                 displayMessage("Sorry, I couldn't find an answer. Please try again.", false);
             }
@@ -100,8 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error(error);
-            alert("Error: Unable to submit feedback. Please try again later.");
+            alert("Error submitting feedback. Please try again later.");
         }
     });
-
 });

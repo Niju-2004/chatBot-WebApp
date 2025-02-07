@@ -1,16 +1,15 @@
 from flask import Flask, render_template, request, jsonify
 import model
 import logging
-import socket
-import asyncio
 import os
 from datetime import datetime
+import asyncio
 
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
-# Translation dictionary (no changes here)
+# Translation dictionary
 translations = {
     'en': {
         'welcome_message': 'Welcome to the Veterinary Chatbot!',

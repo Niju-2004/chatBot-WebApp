@@ -3,8 +3,8 @@ import json
 import faiss
 import numpy as np
 import logging
-import asyncio
 import requests
+import asyncio  # Add this line at the top with other import statements
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 
@@ -42,13 +42,17 @@ FAISS_INDEX_PATH = "vectors_faiss.index"
 
 def download_file(url, local_path):
     """Download a file from a URL and save it locally."""
-    response = requests.get(url)
-    if response.status_code == 200:
-        with open(local_path, "wb") as f:
-            f.write(response.content)
-        logging.info(f"Downloaded {local_path}")
-    else:
-        raise Exception(f"Failed to download {url}")
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            with open(local_path, "wb") as f:
+                f.write(response.content)
+            logging.info(f"Downloaded {local_path}")
+        else:
+            raise Exception(f"Failed to download {url}")
+    except Exception as e:
+        logging.error(f"Error downloading file {url}: {str(e)}")
+        raise
 
 def initialize_system():
     """Download required files and initialize the chatbot system."""
@@ -107,6 +111,7 @@ def generate_gemini_response(results):
     except Exception as e:
         logging.error(f"Error generating content with Gemini: {str(e)}")
         return "Error generating response."
+
 
 if __name__ == "__main__":
     try:
