@@ -52,44 +52,56 @@ def download_file(url, local_path):
 
 def initialize_system():
     """Download required files and initialize the chatbot system."""
-    download_file(CONTENT_JSON_URL, CONTENT_JSON_PATH)
-    download_file(FAISS_INDEX_URL, FAISS_INDEX_PATH)
+    try:
+        download_file(CONTENT_JSON_URL, CONTENT_JSON_PATH)
+        download_file(FAISS_INDEX_URL, FAISS_INDEX_PATH)
 
-    # Load sentence transformer model
-    sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
+        # Load sentence transformer model
+        sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-    # Load FAISS index
-    index = faiss.read_index(FAISS_INDEX_PATH)
-    
-    # Load content JSON
-    with open(CONTENT_JSON_PATH, "r", encoding="utf-8") as f:
-        content = json.load(f)
-    
-    return sentence_model, content, index
+        # Load FAISS index
+        index = faiss.read_index(FAISS_INDEX_PATH)
+        
+        # Load content JSON
+        with open(CONTENT_JSON_PATH, "r", encoding="utf-8") as f:
+            content = json.load(f)
+        
+        return sentence_model, content, index
+    except Exception as e:
+        logging.error(f"Error during system initialization: {str(e)}")
+        raise
 
 async def query_system(user_query, sentence_model, index, content):
     """Process user query, search FAISS, and generate response."""
-    query_vector = np.array(sentence_model.encode([user_query], convert_to_tensor=False)).astype("float32")
-    D, I = index.search(query_vector, k=3)
-    relevant_info = get_relevant_info(I[0], content)
-    
-    response = generate_gemini_response(relevant_info)
-    
-    return response, I, D, relevant_info
+    try:
+        query_vector = np.array(sentence_model.encode([user_query], convert_to_tensor=False)).astype("float32")
+        D, I = index.search(query_vector, k=3)
+        relevant_info = get_relevant_info(I[0], content)
+        
+        response = generate_gemini_response(relevant_info)
+        
+        return response, I, D, relevant_info
+    except Exception as e:
+        logging.error(f"Error during query processing: {str(e)}")
+        raise
 
 def get_relevant_info(indices, content_data):
     """Retrieve structured data from `content.json` based on FAISS indices."""
-    results = []
-    for idx in indices:
-        str_idx = str(idx)
-        if str_idx in content_data:
-            results.append(content_data[str_idx])
-    return results
+    try:
+        results = []
+        for idx in indices:
+            str_idx = str(idx)
+            if str_idx in content_data:
+                results.append(content_data[str_idx])
+        return results
+    except Exception as e:
+        logging.error(f"Error retrieving relevant info: {str(e)}")
+        raise
 
 def generate_gemini_response(results):
     """Generate response using Gemini AI."""
-    prompt = f"Provide a detailed explanation for the following veterinary conditions:\n{json.dumps(results, indent=2)}"
     try:
+        prompt = f"Provide a detailed explanation for the following veterinary conditions:\n{json.dumps(results, indent=2)}"
         response = model.generate_content(prompt)
         return response.text if response else "No response from Gemini."
     except Exception as e:
@@ -97,22 +109,26 @@ def generate_gemini_response(results):
         return "Error generating response."
 
 if __name__ == "__main__":
-    user_query = input("Enter your query: ")
+    try:
+        user_query = input("Enter your query: ")
 
-    # Download required files and initialize system
-    sentence_model, content, index = initialize_system()
+        # Download required files and initialize system
+        sentence_model, content, index = initialize_system()
 
-    # Process the query
-    response, indices, distances, relevant_info = asyncio.run(query_system(user_query, sentence_model, index, content))
+        # Process the query
+        response, indices, distances, relevant_info = asyncio.run(query_system(user_query, sentence_model, index, content))
 
-    # Print results
-    print("\nFAISS Search Results:")
-    print("Indices:", indices)
-    print("Distances:", distances)
+        # Print results
+        print("\nFAISS Search Results:")
+        print("Indices:", indices)
+        print("Distances:", distances)
 
-    print("\n🔍 **Search Results:**")
-    for res in relevant_info:
-        print(json.dumps(res, indent=2))
+        print("\n🔍 **Search Results:**")
+        for res in relevant_info:
+            print(json.dumps(res, indent=2))
 
-    print("\n🌿 **Veterinary Chatbot Response:**")
-    print(response)
+        print("\n🌿 **Veterinary Chatbot Response:**")
+        print(response)
+
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
