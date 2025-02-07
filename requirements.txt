@@ -12,3 +12,4 @@ requests
 googletrans
 matplotlib
 flask-limiter
+aiohttp
