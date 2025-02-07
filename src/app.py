@@ -88,8 +88,8 @@ def get_translations():
     return jsonify(translations.get(language, {}))
 
 if __name__ == '__main__':
-    
+    # Use the PORT environment variable for binding, or default to 5000
     port = int(os.getenv('PORT', 5000))
-    
+
     # Run the app on the host 0.0.0.0 and the given port
-    app.run(debug=True, host="0.0.0.0", port=port)
+    app.run(debug=False, host="0.0.0.0", port=port)
