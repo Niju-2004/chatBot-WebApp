@@ -88,11 +88,8 @@ def get_translations():
     return jsonify(translations.get(language, {}))
 
 if __name__ == '__main__':
-    port = 343
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    ip = s.getsockname()[0]
-    s.close()
-    logging.info(f"The app is running on http://{ip}:{port}")
-    print(f"The app is running on http://{ip}:{port}")
+    # Get the port from the environment variable or default to 5000
+    port = int(os.getenv('PORT', 5000))
+    
+    # Run the app on the host 0.0.0.0 and the given port
     app.run(debug=True, host="0.0.0.0", port=port)
