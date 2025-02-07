@@ -3,12 +3,14 @@ import model
 import logging
 import socket
 import asyncio
+import os
 from datetime import datetime
 
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
+# Translation dictionary (no changes here)
 translations = {
     'en': {
         'welcome_message': 'Welcome to the Veterinary Chatbot!',
@@ -19,6 +21,9 @@ translations = {
         'chatbot_description': 'கால்நடை பராமரிப்பு பற்றிய உங்கள் கேள்விகளுக்கு பதிலளிக்க நான் இங்கே இருக்கிறேன். துல்லியமான நோயறிதல் மற்றும் சரியான சிகிச்சை திட்டத்திற்கு ஒரு கால்நடை மருத்தவரை அணுகவும்.'
     }
 }
+
+# Ensure the feedback file is in a valid directory (use absolute path)
+FEEDBACK_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'feedback.txt')
 
 @app.route('/')
 def home():
@@ -67,7 +72,9 @@ def feedback():
             return jsonify({'success': False, 'message': "No feedback provided!"}), 400
         
         current_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open('feedback.txt', 'a') as f:
+        
+        # Write feedback to feedback.txt (ensure the path is correct)
+        with open(FEEDBACK_FILE_PATH, 'a') as f:
             f.write(f"{current_timestamp}: {feedback}\n")
         
         return jsonify({'success': True, 'message': "Feedback submitted successfully!"})
