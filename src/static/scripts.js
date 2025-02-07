@@ -11,9 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatbotDescription = document.getElementById('chatbot-description');
     const loadingIndicator = document.getElementById('loading-indicator');
 
-    let currentLanguage = 'en';
+    let currentLanguage = localStorage.getItem('language') || 'en';
 
-    // Translation data (same as in app.py)
+    // Translation data
     const translations = {
         "en": {
             "welcome_message": "Welcome to the Veterinary Chatbot!",
@@ -28,19 +28,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayMessage(message, isUser = false, isHTML = false) {
         const messageElement = document.createElement('div');
         messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
-
-        if (isHTML) {
-            messageElement.innerHTML = message; // Use innerHTML for structured responses
-        } else {
-            messageElement.textContent = message;
-        }
-
+        if (isHTML) messageElement.innerHTML = message;
+        else messageElement.textContent = message;
         messageContainer.appendChild(messageElement);
         messageContainer.scrollTop = messageContainer.scrollHeight;
     }
 
     function showLoadingIndicator() {
-        loadingIndicator.style.display = 'block';
+        loadingIndicator.style.display = 'flex';
     }
 
     function hideLoadingIndicator() {
@@ -48,24 +43,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleTranslation(language) {
+        currentLanguage = language;
+        localStorage.setItem('language', language);
         chatHeaderTitle.textContent = translations[language].welcome_message;
         chatbotDescription.textContent = translations[language].chatbot_description;
     }
 
-    // Ensure buttons switch languages correctly
-    langToggleTa.addEventListener('click', () => {
-        currentLanguage = 'ta';
-        handleTranslation(currentLanguage);
-    });
+    // Language toggles
+    langToggleTa.addEventListener('click', () => handleTranslation('ta'));
+    langToggleEn.addEventListener('click', () => handleTranslation('en'));
 
-    langToggleEn.addEventListener('click', () => {
-        currentLanguage = 'en';
-        handleTranslation(currentLanguage);
-    });
-
+    // Send button
     sendButton.addEventListener('click', async () => {
         const query = userInput.value.trim();
-        if (!query) return;
+        if (!query || query.length > 500) {
+            alert("Please enter a valid query (max 500 characters).");
+            return;
+        }
 
         displayMessage(query, true);
         userInput.value = '';
@@ -78,12 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ query })
             });
 
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
-            if (data.response) {
-                displayMessage(data.response, false, true); // Use formatted response with HTML
-            } else {
-                displayMessage("Sorry, I couldn't find an answer. Please try again.", false);
-            }
+            displayMessage(data.response, false, true);
         } catch (error) {
             console.error(error);
             displayMessage("Error: Unable to fetch response. Please try again later.", false);
@@ -92,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Feedback button
     feedbackButton.addEventListener('click', async () => {
         const feedbackText = feedbackInput.value.trim();
         if (!feedbackText) return;
@@ -111,4 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Error submitting feedback. Please try again later.");
         }
     });
+
+    // Initialize language
+    handleTranslation(currentLanguage);
 });

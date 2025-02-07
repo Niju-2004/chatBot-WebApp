@@ -4,17 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Veterinary Chatbot</title>
-    
-    <!-- Favicon -->
+    <meta name="description" content="A veterinary chatbot to help answer your questions about animal care.">
+    <meta name="keywords" content="veterinary, chatbot, animal care, pet health">
     <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-    
-    <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="language-switcher">
-        <button id="lang-toggle-ta" class="lang-toggle-button">Tamil</button>
-        <button id="lang-toggle-en" class="lang-toggle-button">English</button>
+        <button id="lang-toggle-ta" class="lang-toggle-button" aria-label="Switch to Tamil">Tamil</button>
+        <button id="lang-toggle-en" class="lang-toggle-button" aria-label="Switch to English">English</button>
     </div>
     <div class="chat-container">
         <div class="chat-header">
@@ -28,27 +26,22 @@
                 </div>
             </div>
             <div class="input-container">
-                <input type="text" id="user-input" placeholder="Type your question here...">
+                <input type="text" id="user-input" placeholder="Type your question here..." maxlength="500">
                 <button id="send-button">Send</button>
             </div>
         </div>
     </div>
-    
-    <!-- Feedback Container -->
     <div class="feedback-container">
         <div class="feedback-box">
             <h3>Provide Feedback</h3>
-            <textarea id="feedback-input" placeholder="Your feedback helps us improve!"></textarea>
+            <textarea id="feedback-input" placeholder="Your feedback helps us improve!" maxlength="1000"></textarea>
             <button id="feedback-button">Submit Feedback</button>
         </div>
     </div>
-
-    <!-- Loading Indicator -->
     <div class="loading-indicator" id="loading-indicator">
         <div class="spinner"></div>
         <p>Analyzing your query...</p>
     </div>
-
     <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 </body>
 </html>

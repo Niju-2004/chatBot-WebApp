@@ -3,9 +3,13 @@ import model
 import logging
 import os
 from datetime import datetime
-import asyncio
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
+
+# Rate limiting
+limiter = Limiter(app=app, key_func=get_remote_address)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -21,36 +25,29 @@ translations = {
     }
 }
 
-# Ensure the feedback file is in a valid directory
-FEEDBACK_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'feedback.txt')
+# Ensure the feedback file is in a writable directory
+FEEDBACK_FILE_PATH = os.path.join(os.getenv('TEMP', '/tmp'), 'feedback.txt')
+
+@app.before_first_request
+async def initialize():
+    """Initialize the system before the first request."""
+    await model.initialize_system()
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
 @app.route('/ask', methods=['POST'])
-def ask():
+@limiter.limit("5 per minute")
+async def ask():
     try:
         data = request.json
         user_query = data.get('query')
         
-        if not user_query:
-            return jsonify({'response': "No query provided!"}), 400
+        if not user_query or len(user_query) > 500:
+            return jsonify({'response': "Invalid query!"}), 400
         
-        if hasattr(ask, 'previous_query') and ask.previous_query == user_query:
-            return jsonify({'response': "Please enter a new query!"}), 400
-        
-        ask.previous_query = user_query
-
-        sentence_model, content, index = model.initialize_system()
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        response, indices, distances, relevant_info = loop.run_until_complete(
-            model.query_system(user_query, sentence_model, index, content)
-        )
-
+        response, indices, distances, relevant_info = await model.query_system(user_query)
         return jsonify({'response': response})
     
     except Exception as e:
@@ -58,6 +55,7 @@ def ask():
         return jsonify({'response': f"An error occurred: {str(e)}"}), 500
 
 @app.route('/feedback', methods=['POST'])
+@limiter.limit("2 per minute")
 def feedback():
     try:
         data = request.json
@@ -66,7 +64,6 @@ def feedback():
             return jsonify({'success': False, 'message': "No feedback provided!"}), 400
         
         current_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
         with open(FEEDBACK_FILE_PATH, 'a') as f:
             f.write(f"{current_timestamp}: {feedback}\n")
 
