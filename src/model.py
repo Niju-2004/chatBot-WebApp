@@ -4,7 +4,7 @@ import faiss
 import numpy as np
 import logging
 import requests
-import asyncio  # Add this line at the top with other import statements
+import asyncio
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 
@@ -14,7 +14,6 @@ logging.basicConfig(level=logging.INFO)
 # Get GEMINI API key from Render's environment variable
 GEMINI_API = os.getenv("GEMINI_API")
 
-# Ensure API key is set
 if not GEMINI_API:
     raise ValueError("GEMINI_API environment variable is not set. Please configure it in Render.")
 
@@ -60,13 +59,9 @@ def initialize_system():
         download_file(CONTENT_JSON_URL, CONTENT_JSON_PATH)
         download_file(FAISS_INDEX_URL, FAISS_INDEX_PATH)
 
-        # Load sentence transformer model
         sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
-
-        # Load FAISS index
         index = faiss.read_index(FAISS_INDEX_PATH)
-        
-        # Load content JSON
+
         with open(CONTENT_JSON_PATH, "r", encoding="utf-8") as f:
             content = json.load(f)
         
@@ -76,18 +71,17 @@ def initialize_system():
         raise
 
 async def query_system(user_query, sentence_model, index, content):
-    """Process user query, search FAISS, and generate response."""
+    """Process user query, search FAISS, and generate a structured response."""
     try:
         query_vector = np.array(sentence_model.encode([user_query], convert_to_tensor=False)).astype("float32")
         D, I = index.search(query_vector, k=3)
         relevant_info = get_relevant_info(I[0], content)
         
-        response = generate_gemini_response(relevant_info)
-        
-        return response, I, D, relevant_info
+        structured_response = format_response(relevant_info)
+        return structured_response, I, D, relevant_info
     except Exception as e:
         logging.error(f"Error during query processing: {str(e)}")
-        raise
+        return f"Error: {str(e)}", [], [], []
 
 def get_relevant_info(indices, content_data):
     """Retrieve structured data from `content.json` based on FAISS indices."""
@@ -102,38 +96,28 @@ def get_relevant_info(indices, content_data):
         logging.error(f"Error retrieving relevant info: {str(e)}")
         raise
 
-def generate_gemini_response(results):
-    """Generate response using Gemini AI."""
+def format_response(results):
+    """Format the response into structured data with proper HTML formatting."""
     try:
-        prompt = f"Provide a detailed explanation for the following veterinary conditions:\n{json.dumps(results, indent=2)}"
-        response = model.generate_content(prompt)
-        return response.text if response else "No response from Gemini."
+        structured_output = []
+        for result in results:
+            formatted_text = f"""
+            <b>{result['title']}</b><br><br>
+            <b>Definition:</b> {result['definition']}<br><br>
+            <b>Symptoms:</b><br>
+            {format_bullet_points(result['symptoms'])}<br><br>
+            <b>Treatment:</b><br>
+            {format_bullet_points(result['treatment'])}<br><br>
+            <b>Ingredients:</b><br>
+            {format_bullet_points(result['ingredients'])}
+            """
+            structured_output.append(formatted_text)
+        
+        return "<br><br>".join(structured_output)
     except Exception as e:
-        logging.error(f"Error generating content with Gemini: {str(e)}")
-        return "Error generating response."
+        logging.error(f"Error formatting response: {str(e)}")
+        return "Error formatting response."
 
-
-if __name__ == "__main__":
-    try:
-        user_query = input("Enter your query: ")
-
-        # Download required files and initialize system
-        sentence_model, content, index = initialize_system()
-
-        # Process the query
-        response, indices, distances, relevant_info = asyncio.run(query_system(user_query, sentence_model, index, content))
-
-        # Print results
-        print("\nFAISS Search Results:")
-        print("Indices:", indices)
-        print("Distances:", distances)
-
-        print("\n🔍 **Search Results:**")
-        for res in relevant_info:
-            print(json.dumps(res, indent=2))
-
-        print("\n🌿 **Veterinary Chatbot Response:**")
-        print(response)
-
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+def format_bullet_points(items):
+    """Formats bullet points with '🟢' instead of '*'."""
+    return "<br>".join([f"🟢 {item}" for item in items])

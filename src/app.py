@@ -21,7 +21,7 @@ translations = {
     }
 }
 
-# Ensure the feedback file is in a valid directory (use absolute path)
+# Ensure the feedback file is in a valid directory
 FEEDBACK_FILE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'feedback.txt')
 
 @app.route('/')
@@ -41,26 +41,21 @@ def ask():
             return jsonify({'response': "Please enter a new query!"}), 400
         
         ask.previous_query = user_query
-        
-        # Initialize system (loading models and data)
+
         sentence_model, content, index = model.initialize_system()
 
-        # Create a new event loop explicitly for the current request
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
 
-        # Process query and get response using Gemini
         response, indices, distances, relevant_info = loop.run_until_complete(
             model.query_system(user_query, sentence_model, index, content)
-        )  # Use run_until_complete to run the async function
-        
-        # Return response in a structured way
-        return jsonify({'response': {'title': '', 'causes': '', 'treatment': response}})
+        )
+
+        return jsonify({'response': response})
     
     except Exception as e:
         logging.error(f"Error processing query: {e}")
         return jsonify({'response': f"An error occurred: {str(e)}"}), 500
-
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
@@ -71,11 +66,10 @@ def feedback():
             return jsonify({'success': False, 'message': "No feedback provided!"}), 400
         
         current_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Write feedback to feedback.txt (ensure the path is correct)
+
         with open(FEEDBACK_FILE_PATH, 'a') as f:
             f.write(f"{current_timestamp}: {feedback}\n")
-        
+
         return jsonify({'success': True, 'message': "Feedback submitted successfully!"})
     except Exception as e:
         logging.error(f"Error processing feedback: {e}")
@@ -87,8 +81,5 @@ def get_translations():
     return jsonify(translations.get(language, {}))
 
 if __name__ == '__main__':
-    # Use the PORT environment variable for binding, or default to 5000
     port = int(os.getenv('PORT', 5000))
-
-    # Run the app on the host 0.0.0.0 and the given port
     app.run(debug=False, host="0.0.0.0", port=port)
