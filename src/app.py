@@ -28,13 +28,8 @@ translations = {
 # Ensure the feedback file is in a writable directory
 FEEDBACK_FILE_PATH = os.path.join(os.getenv('TEMP', '/tmp'), 'feedback.txt')
 
-# Initialize the system before the first request
-def initialize_system():
-    """Initialize the system synchronously."""
-    model.initialize_system()
-
 # Manually initialize the system when the app starts
-initialize_system()
+model.initialize_system()
 
 @app.route('/')
 def home():
@@ -48,14 +43,14 @@ def ask():
         user_query = data.get('query')
         
         if not user_query or len(user_query) > 500:
-            return jsonify({'response': "Invalid query!"}), 400
+            return jsonify({'response': "Please enter a valid query (max 500 characters)."}), 400
         
-        response, indices, distances, relevant_info = model.query_system(user_query)
+        response, _, _, _ = model.query_system(user_query)
         return jsonify({'response': response})
     
     except Exception as e:
         logging.error(f"Error processing query: {e}")
-        return jsonify({'response': f"An error occurred: {str(e)}"}), 500
+        return jsonify({'response': "Oops! Something went wrong. Please try again later."}), 500
 
 @app.route('/feedback', methods=['POST'])
 @limiter.limit("2 per minute")
@@ -64,16 +59,16 @@ def feedback():
         data = request.json
         feedback = data.get('feedback')
         if not feedback:
-            return jsonify({'success': False, 'message': "No feedback provided!"}), 400
+            return jsonify({'success': False, 'message': "Please enter your feedback."}), 400
         
         current_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with open(FEEDBACK_FILE_PATH, 'a') as f:
             f.write(f"{current_timestamp}: {feedback}\n")
 
-        return jsonify({'success': True, 'message': "Feedback submitted successfully!"})
+        return jsonify({'success': True, 'message': "Thank you for your feedback!"})
     except Exception as e:
         logging.error(f"Error processing feedback: {e}")
-        return jsonify({'success': False, 'message': f"An error occurred: {str(e)}"}), 500
+        return jsonify({'success': False, 'message': "Oops! Something went wrong. Please try again later."}), 500
 
 @app.route('/translations', methods=['GET'])
 def get_translations():

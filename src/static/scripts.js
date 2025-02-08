@@ -34,8 +34,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayMessage(message, isUser = false, isHTML = false) {
         const messageElement = document.createElement('div');
         messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
-        if (isHTML) messageElement.innerHTML = message;
-        else messageElement.textContent = message;
+
+        if (isHTML) {
+            messageElement.innerHTML = formatStructuredResponse(message);
+        } else {
+            messageElement.textContent = message;
+        }
+
         messageContainer.appendChild(messageElement);
         messageContainer.scrollTop = messageContainer.scrollHeight; // Auto-scroll to the latest message
     }
@@ -73,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton.addEventListener('click', async () => {
         const query = userInput.value.trim();
         if (!query || query.length > 500) {
-            displayMessage("Please enter a valid query (max 500 characters).", false);
+            displayMessage("⚠️ Please enter a valid query (max 500 characters).", false);
             return;
         }
 
@@ -90,10 +95,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
-            displayMessage(data.response, false, true); // Display bot's response
+
+            if (!data.response || data.response.trim() === "") {
+                displayMessage("⚠️ No relevant information found. Try asking differently.", false);
+            } else {
+                displayMessage(data.response, false, true); // Display bot's response as formatted HTML
+            }
         } catch (error) {
             console.error(error);
-            displayMessage("Error: Unable to fetch response. Please try again later.", false);
+            displayMessage("❌ Error: Unable to fetch response. Please try again later.", false);
         } finally {
             hideLoadingIndicator();
         }
@@ -103,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     feedbackButton.addEventListener('click', async () => {
         const feedbackText = feedbackInput.value.trim();
         if (!feedbackText || feedbackText.length > 1000) {
-            alert("Please enter valid feedback (max 1000 characters).");
+            alert("⚠️ Please enter valid feedback (max 1000 characters).");
             return;
         }
 
@@ -119,9 +129,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.success) feedbackInput.value = ''; // Clear feedback input on success
         } catch (error) {
             console.error(error);
-            alert("Error submitting feedback. Please try again later.");
+            alert("❌ Error submitting feedback. Please try again later.");
         }
     });
+
+    /**
+     * Format chatbot response to display structured data properly.
+     * @param {string} text - The raw text response from the chatbot.
+     * @returns {string} - Formatted HTML string.
+     */
+    function formatStructuredResponse(text) {
+        return text
+            .replace(/\n/g, "<br>") // Convert new lines to <br>
+            .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>") // Convert **bold text** to <b>bold text</b>
+            .replace(/\* ([^\n]+)/g, "<li>$1</li>") // Convert * bullet points to <li>
+            .replace(/Symptoms:<br>(.*?)<br><br>/g, "<b>Symptoms:</b><ul>$1</ul>") // Wrap symptoms in <ul>
+            .replace(/Treatment:<br>(.*?)<br><br>/g, "<b>Treatment:</b><ul>$1</ul>") // Wrap treatment in <ul>
+            .replace(/Ingredients:<br>(.*?)$/g, "<b>Ingredients:</b><ul>$1</ul>"); // Wrap ingredients in <ul>
+    }
 
     // Handle "Enter" key in user input
     userInput.addEventListener('keypress', (e) => {

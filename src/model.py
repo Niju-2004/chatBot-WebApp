@@ -82,11 +82,14 @@ def query_system(user_query):
         D, I = index.search(query_vector, k=3)
         relevant_info = get_relevant_info(I[0], content)
         
+        if not relevant_info:
+            return "Sorry, no relevant information found for your query. Please try a different question.", [], [], []
+
         structured_response = format_response(relevant_info)
         return structured_response, I, D, relevant_info
     except Exception as e:
         logging.error(f"Error during query processing: {str(e)}")
-        return f"Error: {str(e)}", [], [], []
+        return "Oops! Something went wrong while processing your request. Please try again later.", [], [], []
 
 def get_relevant_info(indices, content_data):
     """Retrieve structured data from `content.json` based on FAISS indices."""
@@ -99,30 +102,34 @@ def get_relevant_info(indices, content_data):
         return results
     except Exception as e:
         logging.error(f"Error retrieving relevant info: {str(e)}")
-        raise
+        return []
 
 def format_response(results):
-    """Format the response into structured data with proper HTML formatting."""
+    """Format the response into structured data."""
     try:
         structured_output = []
         for result in results:
             formatted_text = f"""
-            <b>{result.get('title', 'No Title')}</b><br><br>
-            <b>Definition:</b> {result.get('definition', 'No Definition')}<br><br>
-            <b>Symptoms:</b><br>
-            {format_bullet_points(result.get('symptoms', []))}<br><br>
-            <b>Treatment:</b><br>
-            {format_bullet_points(result.get('treatment', []))}<br><br>
-            <b>Ingredients:</b><br>
-            {format_bullet_points(result.get('ingredients', []))}
+{result.get('title', 'No Title').upper()}
+
+Definition: {result.get('definition', 'Not specified.')}
+
+Symptoms:
+{format_bullet_points(result.get('symptoms', []))}
+
+Treatment:
+{format_bullet_points(result.get('treatment', []))}
+
+Ingredients:
+{format_bullet_points(result.get('ingredients', []))}
             """
-            structured_output.append(formatted_text)
-        
-        return "<br><br>".join(structured_output)
+            structured_output.append(formatted_text.strip())
+
+        return "\n\n".join(structured_output)
     except Exception as e:
         logging.error(f"Error formatting response: {str(e)}")
-        return "Error formatting response."
+        return "Sorry, we encountered an issue while formatting the response."
 
 def format_bullet_points(items):
-    """Formats bullet points with '🟢' instead of '*'."""
-    return "<br>".join([f"🟢 {item}" for item in items])
+    """Formats bullet points correctly."""
+    return "\n".join([f"* {item}" for item in items]) if items else "Not specified."
