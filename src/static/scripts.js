@@ -25,26 +25,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    /**
+     * Display a message in the chat interface.
+     * @param {string} message - The message to display.
+     * @param {boolean} isUser - Whether the message is from the user.
+     * @param {boolean} isHTML - Whether the message contains HTML.
+     */
     function displayMessage(message, isUser = false, isHTML = false) {
         const messageElement = document.createElement('div');
         messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
         if (isHTML) messageElement.innerHTML = message;
         else messageElement.textContent = message;
         messageContainer.appendChild(messageElement);
-        messageContainer.scrollTop = messageContainer.scrollHeight;
+        messageContainer.scrollTop = messageContainer.scrollHeight; // Auto-scroll to the latest message
     }
 
+    /**
+     * Show the loading indicator.
+     */
     function showLoadingIndicator() {
         loadingIndicator.style.display = 'flex';
     }
 
+    /**
+     * Hide the loading indicator.
+     */
     function hideLoadingIndicator() {
         loadingIndicator.style.display = 'none';
     }
 
+    /**
+     * Handle language translation updates.
+     * @param {string} language - The language code ('en' or 'ta').
+     */
     function handleTranslation(language) {
         currentLanguage = language;
-        localStorage.setItem('language', language);
+        localStorage.setItem('language', language); // Save language preference
         chatHeaderTitle.textContent = translations[language].welcome_message;
         chatbotDescription.textContent = translations[language].chatbot_description;
     }
@@ -57,12 +73,12 @@ document.addEventListener('DOMContentLoaded', () => {
     sendButton.addEventListener('click', async () => {
         const query = userInput.value.trim();
         if (!query || query.length > 500) {
-            alert("Please enter a valid query (max 500 characters).");
+            displayMessage("Please enter a valid query (max 500 characters).", false);
             return;
         }
 
-        displayMessage(query, true);
-        userInput.value = '';
+        displayMessage(query, true); // Display user's query
+        userInput.value = ''; // Clear input field
         showLoadingIndicator();
 
         try {
@@ -74,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
-            displayMessage(data.response, false, true);
+            displayMessage(data.response, false, true); // Display bot's response
         } catch (error) {
             console.error(error);
             displayMessage("Error: Unable to fetch response. Please try again later.", false);
@@ -86,7 +102,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Feedback button
     feedbackButton.addEventListener('click', async () => {
         const feedbackText = feedbackInput.value.trim();
-        if (!feedbackText) return;
+        if (!feedbackText || feedbackText.length > 1000) {
+            alert("Please enter valid feedback (max 1000 characters).");
+            return;
+        }
 
         try {
             const response = await fetch('/feedback', {
@@ -97,13 +116,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             alert(data.message);
-            if (data.success) feedbackInput.value = '';
+            if (data.success) feedbackInput.value = ''; // Clear feedback input on success
         } catch (error) {
             console.error(error);
             alert("Error submitting feedback. Please try again later.");
         }
     });
 
-    // Initialize language
+    // Handle "Enter" key in user input
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendButton.click(); // Trigger send button click
+        }
+    });
+
+    // Handle "Enter" key in feedback input
+    feedbackInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            feedbackButton.click(); // Trigger feedback button click
+        }
+    });
+
+    // Initialize language on page load
     handleTranslation(currentLanguage);
 });

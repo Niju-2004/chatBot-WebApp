@@ -28,10 +28,13 @@ translations = {
 # Ensure the feedback file is in a writable directory
 FEEDBACK_FILE_PATH = os.path.join(os.getenv('TEMP', '/tmp'), 'feedback.txt')
 
-@app.before_first_request
-async def initialize():
-    """Initialize the system before the first request."""
-    await model.initialize_system()
+# Initialize the system before the first request
+def initialize_system():
+    """Initialize the system synchronously."""
+    model.initialize_system()
+
+# Manually initialize the system when the app starts
+initialize_system()
 
 @app.route('/')
 def home():
@@ -39,7 +42,7 @@ def home():
 
 @app.route('/ask', methods=['POST'])
 @limiter.limit("5 per minute")
-async def ask():
+def ask():
     try:
         data = request.json
         user_query = data.get('query')
@@ -47,7 +50,7 @@ async def ask():
         if not user_query or len(user_query) > 500:
             return jsonify({'response': "Invalid query!"}), 400
         
-        response, indices, distances, relevant_info = await model.query_system(user_query)
+        response, indices, distances, relevant_info = model.query_system(user_query)
         return jsonify({'response': response})
     
     except Exception as e:

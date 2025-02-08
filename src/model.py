@@ -3,8 +3,7 @@ import json
 import faiss
 import numpy as np
 import logging
-import aiohttp
-import asyncio
+import requests
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 
@@ -44,27 +43,26 @@ sentence_model = None
 content = None
 index = None
 
-async def download_file_async(url, local_path):
-    """Download a file from a URL asynchronously and save it locally."""
+def download_file(url, local_path):
+    """Download a file from a URL synchronously."""
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    with open(local_path, "wb") as f:
-                        f.write(await response.read())
-                    logging.info(f"Downloaded {local_path}")
-                else:
-                    raise Exception(f"Failed to download {url}")
+        response = requests.get(url)
+        if response.status_code == 200:
+            with open(local_path, "wb") as f:
+                f.write(response.content)
+            logging.info(f"Downloaded {local_path}")
+        else:
+            raise Exception(f"Failed to download {url}")
     except Exception as e:
         logging.error(f"Error downloading file {url}: {str(e)}")
         raise
 
-async def initialize_system():
-    """Download required files and initialize the chatbot system."""
+def initialize_system():
+    """Download required files and initialize the chatbot system synchronously."""
     global sentence_model, content, index
     try:
-        await download_file_async(CONTENT_JSON_URL, CONTENT_JSON_PATH)
-        await download_file_async(FAISS_INDEX_URL, FAISS_INDEX_PATH)
+        download_file(CONTENT_JSON_URL, CONTENT_JSON_PATH)
+        download_file(FAISS_INDEX_URL, FAISS_INDEX_PATH)
 
         sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
         index = faiss.read_index(FAISS_INDEX_PATH)
@@ -77,8 +75,8 @@ async def initialize_system():
         logging.error(f"Error during system initialization: {str(e)}")
         raise
 
-async def query_system(user_query):
-    """Process user query, search FAISS, and generate a structured response."""
+def query_system(user_query):
+    """Process user query synchronously."""
     try:
         query_vector = np.array(sentence_model.encode([user_query], convert_to_tensor=False)).astype("float32")
         D, I = index.search(query_vector, k=3)
