@@ -139,13 +139,32 @@ document.addEventListener('DOMContentLoaded', () => {
      * @returns {string} - Formatted HTML string.
      */
     function formatStructuredResponse(text) {
-        return text
-            .replace(/\n/g, "<br>") // Convert new lines to <br>
-            .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>") // Convert **bold text** to <b>bold text</b>
-            .replace(/\* ([^\n]+)/g, "<li>$1</li>") // Convert * bullet points to <li>
-            .replace(/Symptoms:<br>(.*?)<br><br>/g, "<b>Symptoms:</b><ul>$1</ul>") // Wrap symptoms in <ul>
-            .replace(/Treatment:<br>(.*?)<br><br>/g, "<b>Treatment:</b><ul>$1</ul>") // Wrap treatment in <ul>
-            .replace(/Ingredients:<br>(.*?)$/g, "<b>Ingredients:</b><ul>$1</ul>"); // Wrap ingredients in <ul>
+        // Split the text into paragraphs based on double newlines
+        const paragraphs = text.split('\n\n');
+
+        // Wrap each paragraph in <p> tags
+        const formattedParagraphs = paragraphs.map(paragraph => {
+            // Replace single newlines with <br> within the same paragraph
+            const formattedParagraph = paragraph.replace(/\n/g, '<br>');
+
+            // Handle bullet points (if any)
+            if (formattedParagraph.startsWith('*')) {
+                // Convert bullet points to <ul> and <li>
+                const bulletPoints = formattedParagraph.split('<br>').map(line => {
+                    if (line.startsWith('*')) {
+                        return `<li>${line.slice(1).trim()}</li>`;
+                    }
+                    return line;
+                }).join('');
+
+                return `<ul>${bulletPoints}</ul>`;
+            }
+
+            // Wrap the paragraph in <p> tags
+            return `<p>${formattedParagraph}</p>`;
+        }).join('');
+
+        return formattedParagraphs;
     }
 
     // Handle "Enter" key in user input
