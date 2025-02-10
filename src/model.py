@@ -6,20 +6,18 @@ import logging
 import requests
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
+from googletrans import Translator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-# Get GEMINI API key from Render's environment variable
+# Get GEMINI API key from environment variable
 GEMINI_API = os.getenv("GEMINI_API")
-
 if not GEMINI_API:
     raise ValueError("GEMINI_API environment variable is not set. Please configure it in Render.")
 
-# Configure Gemini API
 genai.configure(api_key=GEMINI_API)
 
-# Generation settings
 generation_config = {
     "temperature": 0.0,
     "top_p": 1,
@@ -27,109 +25,106 @@ generation_config = {
     "max_output_tokens": 2048
 }
 
-# Initialize Gemini model
 model = genai.GenerativeModel("gemini-pro", generation_config=generation_config)
 
-# GitHub Raw URLs for FAISS index and content
 CONTENT_JSON_URL = "https://raw.githubusercontent.com/Niju-2004/faiss-index-storage/main/content.json"
 FAISS_INDEX_URL = "https://raw.githubusercontent.com/Niju-2004/faiss-index-storage/main/vectors_faiss.index"
 
-# Local Paths for downloaded files
 CONTENT_JSON_PATH = "content.json"
 FAISS_INDEX_PATH = "vectors_faiss.index"
 
-# Global variables for caching
 sentence_model = None
 content = None
 index = None
+translator = Translator()
 
 def download_file(url, local_path):
-    """Download a file from a URL synchronously."""
     try:
         response = requests.get(url)
-        if response.status_code == 200:
-            with open(local_path, "wb") as f:
-                f.write(response.content)
-            logging.info(f"Downloaded {local_path}")
-        else:
-            raise Exception(f"Failed to download {url}")
-    except Exception as e:
-        logging.error(f"Error downloading file {url}: {str(e)}")
+        response.raise_for_status()
+        with open(local_path, "wb") as f:
+            f.write(response.content)
+        logging.info(f"Downloaded {local_path}")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error downloading {url}: {e}")
         raise
 
 def initialize_system():
-    """Download required files and initialize the chatbot system synchronously."""
     global sentence_model, content, index
     try:
         download_file(CONTENT_JSON_URL, CONTENT_JSON_PATH)
         download_file(FAISS_INDEX_URL, FAISS_INDEX_PATH)
-
+        
         sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
         index = faiss.read_index(FAISS_INDEX_PATH)
-
+        
         with open(CONTENT_JSON_PATH, "r", encoding="utf-8") as f:
             content = json.load(f)
         
         logging.info("System initialized successfully.")
     except Exception as e:
-        logging.error(f"Error during system initialization: {str(e)}")
+        logging.error(f"Error during system initialization: {e}")
         raise
 
-def query_system(user_query):
-    """Process user query synchronously."""
+def detect_language(text):
     try:
+        return translator.detect(text).lang
+    except Exception as e:
+        logging.error(f"Language detection failed: {e}")
+        return "en"
+
+def translate_text(text, src_lang, dest_lang):
+    try:
+        return translator.translate(text, src=src_lang, dest=dest_lang).text
+    except Exception as e:
+        logging.error(f"Translation failed: {e}")
+        return text
+
+def query_system(user_query):
+    try:
+        query_lang = detect_language(user_query)
+        if query_lang == "ta":
+            user_query = translate_text(user_query, src_lang="ta", dest_lang="en")
+        
         query_vector = np.array(sentence_model.encode([user_query], convert_to_tensor=False)).astype("float32")
         D, I = index.search(query_vector, k=3)
         relevant_info = get_relevant_info(I[0], content)
         
-        if not relevant_info:
-            return "Sorry, no relevant information found for your query. Please try a different question.", [], [], []
-
-        structured_response = format_response(relevant_info)
-        return structured_response, I, D, relevant_info
+        response = generate_gemini_response(relevant_info)
+        
+        if query_lang == "ta":
+            response = translate_text(response, src_lang="en", dest_lang="ta")
+        
+        return response, I, D, relevant_info
     except Exception as e:
-        logging.error(f"Error during query processing: {str(e)}")
-        return "Oops! Something went wrong while processing your request. Please try again later.", [], [], []
+        logging.error(f"Error processing query: {e}")
+        return "An error occurred while processing your request.", [], [], []
 
 def get_relevant_info(indices, content_data):
-    """Retrieve structured data from `content.json` based on FAISS indices."""
+    results = []
+    for idx in indices:
+        str_idx = str(idx)
+        if str_idx in content_data:
+            entry = content_data[str_idx]
+            results.append({
+                'title': entry.get('disease', 'Unknown Disease'),
+                'definition': "Not available",
+                'symptoms': entry.get('symptoms', 'Not specified.').split(", "),
+                'treatment': entry.get('treatment', 'Not specified.').split("\n"),
+                'ingredients': entry.get('ingredients', 'Not specified.').split(", ")
+            })
+    return results
+
+def generate_gemini_response(results):
+    prompt = f"Provide a detailed explanation for the following veterinary conditions:\n{json.dumps(results, indent=2)}"
     try:
-        results = []
-        for idx in indices:
-            str_idx = str(idx)
-            if str_idx in content_data:
-                results.append(content_data[str_idx])
-        return results
+        response = model.generate_content(prompt)
+        return response.text if response else "No response from Gemini."
     except Exception as e:
-        logging.error(f"Error retrieving relevant info: {str(e)}")
-        return []
-
-def format_response(results):
-    """Format the response into structured data."""
-    try:
-        structured_output = []
-        for result in results:
-            formatted_text = f"""
-{result.get('title', 'No Title').upper()}
-
-Definition: {result.get('definition', 'Not specified.')}
-
-Symptoms:
-{format_bullet_points(result.get('symptoms', []))}
-
-Treatment:
-{format_bullet_points(result.get('treatment', []))}
-
-Ingredients:
-{format_bullet_points(result.get('ingredients', []))}
-            """
-            structured_output.append(formatted_text.strip())
-
-        return "\n\n".join(structured_output)
-    except Exception as e:
-        logging.error(f"Error formatting response: {str(e)}")
-        return "Sorry, we encountered an issue while formatting the response."
+        logging.error(f"Error generating content with Gemini: {e}")
+        return "Error generating response."
 
 def format_bullet_points(items):
-    """Formats bullet points correctly."""
-    return "\n".join([f"* {item}" for item in items]) if items else "Not specified."
+    return "\n".join([f"* {item.strip()}" for item in items if item.strip()]) if items else "Not specified."
+
+initialize_system()

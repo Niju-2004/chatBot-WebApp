@@ -13,66 +13,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentLanguage = localStorage.getItem('language') || 'en';
 
-    // Translation data
     const translations = {
         "en": {
             "welcome_message": "Welcome to the Veterinary Chatbot!",
             "chatbot_description": "I'm here to help answer your questions about veterinary care. Consult a veterinarian for an accurate diagnosis and proper treatment plan."
         },
         "ta": {
-            "welcome_message": "கால்நடை மருத்துவ அரட்டைப் பெட்டிக்கு வருக!",
-            "chatbot_description": "கால்நடை பராமரிப்பு பற்றிய உங்கள் கேள்விகளுக்கு பதிலளிக்க நான் இங்கே இருக்கிறேன். துல்லியமான நோயறிதல் மற்றும் சரியான சிகிச்சை திட்டத்திற்கு ஒரு கால்நடை மருத்தவரை அணுகவும்."
+            "welcome_message": "\u0b95\u0bbe\u0bb2\u0bcd\u0ba8\u0b9f\u0bc8 \u0bae\u0bb0\u0bc1\u0ba4\u0bcd\u0ba4\u0bc1\u0bb5 \u0b85\u0bb0\u0b9f\u0bcd\u0b9f\u0bc8\u0baa\u0bcd \u0baa\u0bc6\u0b9f\u0bcd\u0b9f\u0bbf\u0b95\u0bcd\u0b95\u0bc1 \u0bb5\u0bb0\u0bc1\u0b95!",
+            "chatbot_description": "\u0b95\u0bbe\u0bb2\u0bcd\u0ba8\u0b9f\u0bc8 \u0baa\u0bb0\u0bbe\u0bae\u0bb0\u0bbf\u0baa\u0bcd\u0baa\u0bc1 \u0baa\u0b9f\u0bcd\u0b9f\u0bbf\u0baf \u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bc1\u0b95\u0bcd\u0b95\u0bc1 \u0baa\u0bba\u0bc2\u0bb5\u0b95." 
         }
     };
 
-    /**
-     * Display a message in the chat interface.
-     * @param {string} message - The message to display.
-     * @param {boolean} isUser - Whether the message is from the user.
-     */
     function displayMessage(message, isUser = false) {
         const messageElement = document.createElement('div');
         messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
-
-        // Format the message (bold text and line breaks)
-        messageElement.innerHTML = message
-            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // Replace **text** with <b>text</b>
-            .replace(/\n/g, '<br>'); // Replace \n with <br>
-
+        messageElement.innerHTML = message.replace(/\n/g, '<br>');
         messageContainer.appendChild(messageElement);
-        messageContainer.scrollTop = messageContainer.scrollHeight; // Auto-scroll to the latest message
+        messageContainer.scrollTop = messageContainer.scrollHeight;
     }
 
-    /**
-     * Show the loading indicator.
-     */
     function showLoadingIndicator() {
         loadingIndicator.style.display = 'flex';
     }
 
-    /**
-     * Hide the loading indicator.
-     */
     function hideLoadingIndicator() {
         loadingIndicator.style.display = 'none';
     }
 
-    /**
-     * Handle language translation updates.
-     * @param {string} language - The language code ('en' or 'ta').
-     */
     function handleTranslation(language) {
         currentLanguage = language;
-        localStorage.setItem('language', language); // Save language preference
+        localStorage.setItem('language', language);
         chatHeaderTitle.textContent = translations[language].welcome_message;
         chatbotDescription.textContent = translations[language].chatbot_description;
     }
 
-    // Language toggles
     langToggleTa.addEventListener('click', () => handleTranslation('ta'));
     langToggleEn.addEventListener('click', () => handleTranslation('en'));
 
-    // Send button
     sendButton.addEventListener('click', async () => {
         const query = userInput.value.trim();
         if (!query || query.length > 500) {
@@ -80,8 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        displayMessage(query, true); // Display user's query
-        userInput.value = ''; // Clear input field
+        displayMessage(query, true);
+        userInput.value = '';
         showLoadingIndicator();
 
         try {
@@ -91,15 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ query })
             });
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
-
-            if (!data.response || data.response.trim() === "") {
-                displayMessage("⚠️ No relevant information found. Try asking differently.", false);
-            } else {
-                // Display the response with proper formatting
-                displayMessage(data.response, false);
-            }
+            displayMessage(data.response || "⚠️ No relevant information found.", false);
         } catch (error) {
             console.error(error);
             displayMessage("❌ Error: Unable to fetch response. Please try again later.", false);
@@ -108,11 +78,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Feedback button
     feedbackButton.addEventListener('click', async () => {
         const feedbackText = feedbackInput.value.trim();
         if (!feedbackText || feedbackText.length > 1000) {
-            alert("⚠️ Please enter valid feedback (max 1000 characters).");
+            alert("⚠️ Please enter valid feedback (max 1000 characters). ");
             return;
         }
 
@@ -125,27 +94,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             alert(data.message);
-            if (data.success) feedbackInput.value = ''; // Clear feedback input on success
+            if (data.success) feedbackInput.value = '';
         } catch (error) {
             console.error(error);
             alert("❌ Error submitting feedback. Please try again later.");
         }
     });
 
-    // Handle "Enter" key in user input
     userInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            sendButton.click(); // Trigger send button click
-        }
+        if (e.key === 'Enter') sendButton.click();
     });
 
-    // Handle "Enter" key in feedback input
     feedbackInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            feedbackButton.click(); // Trigger feedback button click
-        }
+        if (e.key === 'Enter') feedbackButton.click();
     });
 
-    // Initialize language on page load
     handleTranslation(currentLanguage);
 });
