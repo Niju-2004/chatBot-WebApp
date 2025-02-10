@@ -6,7 +6,7 @@ import logging
 import requests
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
-from googletrans import Translator
+import translators as ts
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,7 +36,6 @@ FAISS_INDEX_PATH = "vectors_faiss.index"
 sentence_model = None
 content = None
 index = None
-translator = Translator()
 
 def download_file(url, local_path):
     try:
@@ -68,14 +67,14 @@ def initialize_system():
 
 def detect_language(text):
     try:
-        return translator.detect(text).lang
+        return ts.detect(text)
     except Exception as e:
         logging.error(f"Language detection failed: {e}")
         return "en"
 
 def translate_text(text, src_lang, dest_lang):
     try:
-        return translator.translate(text, src=src_lang, dest=dest_lang).text
+        return ts.translate_text(text, from_language=src_lang, to_language=dest_lang)
     except Exception as e:
         logging.error(f"Translation failed: {e}")
         return text
@@ -116,10 +115,13 @@ def get_relevant_info(indices, content_data):
     return results
 
 def generate_gemini_response(results):
-    prompt = f"Provide a detailed explanation for the following veterinary conditions:\n{json.dumps(results, indent=2)}"
     try:
+        prompt = f"Provide a detailed explanation for the following veterinary conditions:\n{json.dumps(results, indent=2)}"
         response = model.generate_content(prompt)
-        return response.text if response else "No response from Gemini."
+        if response and response.text:
+            return response.text
+        else:
+            return "No response from Gemini."
     except Exception as e:
         logging.error(f"Error generating content with Gemini: {e}")
         return "Error generating response."

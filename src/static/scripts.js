@@ -68,8 +68,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ query })
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
-            displayMessage(data.response || "⚠️ No relevant information found.", false);
+            if (!data.response || data.response.trim() === "") {
+                displayMessage("⚠️ No relevant information found. Try asking differently.", false);
+            } else {
+                displayMessage(data.response, false);
+            }
         } catch (error) {
             console.error(error);
             displayMessage("❌ Error: Unable to fetch response. Please try again later.", false);
@@ -81,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
     feedbackButton.addEventListener('click', async () => {
         const feedbackText = feedbackInput.value.trim();
         if (!feedbackText || feedbackText.length > 1000) {
-            alert("⚠️ Please enter valid feedback (max 1000 characters). ");
+            alert("⚠️ Please enter valid feedback (max 1000 characters).");
             return;
         }
 

@@ -13,3 +13,4 @@ googletrans
 matplotlib
 flask-limiter
 aiohttp
+translators

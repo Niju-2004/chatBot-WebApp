@@ -85,4 +85,4 @@ def get_translations():
 if __name__ == '__main__':
     # Bind to the port specified by Render (default: 10000)
     port = int(os.getenv('PORT', 10000))
-    app.run(debug=False, host="0.0.0.0", port=port)
+    app.run(debug=False, host="0.0.0.0", port=port, threaded=True)
