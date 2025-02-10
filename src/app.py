@@ -6,12 +6,19 @@ from datetime import datetime
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+# Initialize Flask app
 app = Flask(__name__)
 
-# Rate limiting
-limiter = Limiter(app=app, key_func=get_remote_address)
-
-logging.basicConfig(level=logging.INFO)
+# Configure rate limiting with in-memory storage (for development)
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    storage_uri="memory://",  # Use in-memory storage for rate limiting
+    default_limits=["200 per day", "50 per hour"]
+)
 
 # Translation dictionary
 translations = {
@@ -76,5 +83,6 @@ def get_translations():
     return jsonify(translations.get(language, {}))
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', 5000))
+    # Bind to the port specified by Render (default: 10000)
+    port = int(os.getenv('PORT', 10000))
     app.run(debug=False, host="0.0.0.0", port=port)

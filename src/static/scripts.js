@@ -33,7 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayMessage(message, isUser = false) {
         const messageElement = document.createElement('div');
         messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
-        messageElement.textContent = message;
+
+        // Format the message (bold text and line breaks)
+        messageElement.innerHTML = message
+            .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') // Replace **text** with <b>text</b>
+            .replace(/\n/g, '<br>'); // Replace \n with <br>
+
         messageContainer.appendChild(messageElement);
         messageContainer.scrollTop = messageContainer.scrollHeight; // Auto-scroll to the latest message
     }
@@ -92,8 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data.response || data.response.trim() === "") {
                 displayMessage("⚠️ No relevant information found. Try asking differently.", false);
             } else {
-                // Display the response with a typing effect
-                typeResponse(data.response);
+                // Display the response with proper formatting
+                displayMessage(data.response, false);
             }
         } catch (error) {
             console.error(error);
@@ -102,30 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
             hideLoadingIndicator();
         }
     });
-
-    /**
-     * Type out the chatbot's response one character at a time.
-     * @param {string} response - The chatbot's response.
-     */
-    function typeResponse(response) {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('bot-message');
-        messageContainer.appendChild(messageElement);
-
-        let index = 0;
-        const typingSpeed = 30; // Adjust typing speed (in milliseconds)
-
-        function type() {
-            if (index < response.length) {
-                messageElement.textContent += response.charAt(index);
-                index++;
-                setTimeout(type, typingSpeed);
-                messageContainer.scrollTop = messageContainer.scrollHeight; // Auto-scroll
-            }
-        }
-
-        type(); // Start typing effect
-    }
 
     // Feedback button
     feedbackButton.addEventListener('click', async () => {
