@@ -29,18 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
      * Display a message in the chat interface.
      * @param {string} message - The message to display.
      * @param {boolean} isUser - Whether the message is from the user.
-     * @param {boolean} isHTML - Whether the message contains HTML.
      */
-    function displayMessage(message, isUser = false, isHTML = false) {
+    function displayMessage(message, isUser = false) {
         const messageElement = document.createElement('div');
         messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
-
-        if (isHTML) {
-            messageElement.innerHTML = formatStructuredResponse(message);
-        } else {
-            messageElement.textContent = message;
-        }
-
+        messageElement.textContent = message;
         messageContainer.appendChild(messageElement);
         messageContainer.scrollTop = messageContainer.scrollHeight; // Auto-scroll to the latest message
     }
@@ -99,7 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data.response || data.response.trim() === "") {
                 displayMessage("⚠️ No relevant information found. Try asking differently.", false);
             } else {
-                displayMessage(data.response, false, true); // Display bot's response as formatted HTML
+                // Display the response with a typing effect
+                typeResponse(data.response);
             }
         } catch (error) {
             console.error(error);
@@ -108,6 +102,30 @@ document.addEventListener('DOMContentLoaded', () => {
             hideLoadingIndicator();
         }
     });
+
+    /**
+     * Type out the chatbot's response one character at a time.
+     * @param {string} response - The chatbot's response.
+     */
+    function typeResponse(response) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('bot-message');
+        messageContainer.appendChild(messageElement);
+
+        let index = 0;
+        const typingSpeed = 30; // Adjust typing speed (in milliseconds)
+
+        function type() {
+            if (index < response.length) {
+                messageElement.textContent += response.charAt(index);
+                index++;
+                setTimeout(type, typingSpeed);
+                messageContainer.scrollTop = messageContainer.scrollHeight; // Auto-scroll
+            }
+        }
+
+        type(); // Start typing effect
+    }
 
     // Feedback button
     feedbackButton.addEventListener('click', async () => {
@@ -132,40 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("❌ Error submitting feedback. Please try again later.");
         }
     });
-
-    /**
-     * Format chatbot response to display structured data properly.
-     * @param {string} text - The raw text response from the chatbot.
-     * @returns {string} - Formatted HTML string.
-     */
-    function formatStructuredResponse(text) {
-        // Split the text into paragraphs based on double newlines
-        const paragraphs = text.split('\n\n');
-
-        // Wrap each paragraph in <p> tags
-        const formattedParagraphs = paragraphs.map(paragraph => {
-            // Replace single newlines with <br> within the same paragraph
-            const formattedParagraph = paragraph.replace(/\n/g, '<br>');
-
-            // Handle bullet points (if any)
-            if (formattedParagraph.startsWith('*')) {
-                // Convert bullet points to <ul> and <li>
-                const bulletPoints = formattedParagraph.split('<br>').map(line => {
-                    if (line.startsWith('*')) {
-                        return `<li>${line.slice(1).trim()}</li>`;
-                    }
-                    return line;
-                }).join('');
-
-                return `<ul>${bulletPoints}</ul>`;
-            }
-
-            // Wrap the paragraph in <p> tags
-            return `<p>${formattedParagraph}</p>`;
-        }).join('');
-
-        return formattedParagraphs;
-    }
 
     // Handle "Enter" key in user input
     userInput.addEventListener('keypress', (e) => {
