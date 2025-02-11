@@ -24,32 +24,79 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    /**
+     * Display a message in the chat interface.
+     * @param {string} message - The message to display.
+     * @param {boolean} isUser - Whether the message is from the user.
+     */
     function displayMessage(message, isUser = false) {
         const messageElement = document.createElement('div');
         messageElement.classList.add(isUser ? 'user-message' : 'bot-message');
-        messageElement.innerHTML = message.replace(/\n/g, '<br>');
         messageContainer.appendChild(messageElement);
+
+        if (isUser) {
+            // Display user message immediately
+            messageElement.textContent = message;
+        } else {
+            // Display bot message with typing effect
+            typeResponse(message, messageElement);
+        }
+
+        // Auto-scroll to the latest message
         messageContainer.scrollTop = messageContainer.scrollHeight;
     }
 
+    /**
+     * Type out the chatbot's response one character at a time.
+     * @param {string} response - The chatbot's response.
+     * @param {HTMLElement} messageElement - The message container element.
+     */
+    function typeResponse(response, messageElement) {
+        let index = 0;
+        const typingSpeed = 30; // Adjust typing speed (in milliseconds)
+
+        function type() {
+            if (index < response.length) {
+                messageElement.textContent += response.charAt(index);
+                index++;
+                setTimeout(type, typingSpeed);
+                messageContainer.scrollTop = messageContainer.scrollHeight; // Auto-scroll
+            }
+        }
+
+        type(); // Start typing effect
+    }
+
+    /**
+     * Show the loading indicator.
+     */
     function showLoadingIndicator() {
         loadingIndicator.style.display = 'flex';
     }
 
+    /**
+     * Hide the loading indicator.
+     */
     function hideLoadingIndicator() {
         loadingIndicator.style.display = 'none';
     }
 
+    /**
+     * Handle language translation updates.
+     * @param {string} language - The language code ('en' or 'ta').
+     */
     function handleTranslation(language) {
         currentLanguage = language;
-        localStorage.setItem('language', language);
+        localStorage.setItem('language', language); // Save language preference
         chatHeaderTitle.textContent = translations[language].welcome_message;
         chatbotDescription.textContent = translations[language].chatbot_description;
     }
 
+    // Language toggles
     langToggleTa.addEventListener('click', () => handleTranslation('ta'));
     langToggleEn.addEventListener('click', () => handleTranslation('en'));
 
+    // Send button
     sendButton.addEventListener('click', async () => {
         const query = userInput.value.trim();
         if (!query || query.length > 500) {
@@ -57,8 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        displayMessage(query, true);
-        userInput.value = '';
+        displayMessage(query, true); // Display user's query
+        userInput.value = ''; // Clear input field
         showLoadingIndicator();
 
         try {
@@ -68,14 +115,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ query })
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
+
             if (!data.response || data.response.trim() === "") {
                 displayMessage("⚠️ No relevant information found. Try asking differently.", false);
             } else {
+                // Display the response with a typing effect
                 displayMessage(data.response, false);
             }
         } catch (error) {
@@ -86,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Feedback button
     feedbackButton.addEventListener('click', async () => {
         const feedbackText = feedbackInput.value.trim();
         if (!feedbackText || feedbackText.length > 1000) {
@@ -102,20 +149,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             alert(data.message);
-            if (data.success) feedbackInput.value = '';
+            if (data.success) feedbackInput.value = ''; // Clear feedback input on success
         } catch (error) {
             console.error(error);
             alert("❌ Error submitting feedback. Please try again later.");
         }
     });
 
+    // Handle "Enter" key in user input
     userInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendButton.click();
     });
 
+    // Handle "Enter" key in feedback input
     feedbackInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') feedbackButton.click();
     });
 
+    // Initialize language on page load
     handleTranslation(currentLanguage);
 });
