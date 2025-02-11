@@ -36,6 +36,7 @@ FAISS_INDEX_PATH = "vectors_faiss.index"
 sentence_model = None
 content = None
 index = None
+translator = google_translator()
 
 def download_file(url, local_path):
     try:
@@ -67,7 +68,6 @@ def initialize_system():
 
 def detect_language(text):
     try:
-        translator = google_translator()
         return translator.detect(text)[0]  # Returns the language code (e.g., 'en')
     except Exception as e:
         logging.error(f"Language detection failed: {e}")
@@ -75,7 +75,6 @@ def detect_language(text):
 
 def translate_text(text, src_lang, dest_lang):
     try:
-        translator = google_translator()
         return translator.translate(text, lang_src=src_lang, lang_tgt=dest_lang)
     except Exception as e:
         logging.error(f"Translation failed: {e}")
