@@ -14,3 +14,4 @@ matplotlib
 flask-limiter
 aiohttp
 translators
+google_trans_news

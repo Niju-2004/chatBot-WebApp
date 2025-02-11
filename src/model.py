@@ -6,7 +6,7 @@ import logging
 import requests
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
-import translators as ts
+from google_trans_new import google_translator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -67,14 +67,16 @@ def initialize_system():
 
 def detect_language(text):
     try:
-        return ts.detect(text)
+        translator = google_translator()
+        return translator.detect(text)[0]  # Returns the language code (e.g., 'en')
     except Exception as e:
         logging.error(f"Language detection failed: {e}")
         return "en"
 
 def translate_text(text, src_lang, dest_lang):
     try:
-        return ts.translate_text(text, from_language=src_lang, to_language=dest_lang)
+        translator = google_translator()
+        return translator.translate(text, lang_src=src_lang, lang_tgt=dest_lang)
     except Exception as e:
         logging.error(f"Translation failed: {e}")
         return text
@@ -86,7 +88,7 @@ def query_system(user_query):
             user_query = translate_text(user_query, src_lang="ta", dest_lang="en")
         
         query_vector = np.array(sentence_model.encode([user_query], convert_to_tensor=False)).astype("float32")
-        D, I = index.search(query_vector, k=3)
+        D, I = index.search(query_vector, k=1)
         relevant_info = get_relevant_info(I[0], content)
         
         response = generate_gemini_response(relevant_info)
