@@ -19,7 +19,7 @@ if not GEMINI_API:
 genai.configure(api_key=GEMINI_API)
 
 generation_config = {
-    "temperature": 0.0,
+    "temperature": 0.7,
     "top_p": 1,
     "top_k": 1,
     "max_output_tokens": 2048
