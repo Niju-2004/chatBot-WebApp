@@ -6,7 +6,7 @@ import logging
 import requests
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
-from googletrans import Translator  # Updated import
+from googletrans import Translator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,7 +36,7 @@ FAISS_INDEX_PATH = "vectors_faiss.index"
 sentence_model = None
 content = None
 index = None
-translator = Translator()  # Updated translator initialization
+translator = Translator()
 
 def download_file(url, local_path):
     try:
@@ -70,14 +70,14 @@ def initialize_system():
 
 def detect_language(text):
     try:
-        return translator.detect(text).lang  # Updated language detection
+        return translator.detect(text).lang
     except Exception as e:
         logging.error(f"Language detection failed: {e}")
         return "en"
 
 def translate_text(text, src_lang, dest_lang):
     try:
-        return translator.translate(text, src=src_lang, dest=dest_lang).text  # Updated translation
+        return translator.translate(text, src=src_lang, dest=dest_lang).text
     except Exception as e:
         logging.error(f"Translation failed: {e}")
         return text
@@ -133,5 +133,3 @@ def format_bullet_points(items):
     return "\n".join([f"* {item.strip()}" for item in items if item.strip()]) if items else "Not specified."
 
 initialize_system()
-
-# app.py and scripts.js remain the same.
