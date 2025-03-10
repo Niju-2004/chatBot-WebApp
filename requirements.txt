@@ -1,5 +1,4 @@
 Flask
-hnswlib
 pandas
 numpy
 sentence-transformers
@@ -10,8 +9,7 @@ gunicorn
 faiss-cpu
 requests
 googletrans
-matplotlib
 flask-limiter
 aiohttp
 translators
-google_trans_news
+google_trans_new
