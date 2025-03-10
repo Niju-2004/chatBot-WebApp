@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import asyncio
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -52,7 +53,12 @@ def ask():
         if not user_query or len(user_query) > 500:
             return jsonify({'response': "Please enter a valid query (max 500 characters)."}), 400
         
-        response, _, _, _ = model.query_system(user_query)
+        # Run the asynchronous query_system function in a separate thread
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        response, _, _, _ = loop.run_until_complete(model.query_system(user_query))
+        loop.close()
+        
         return jsonify({'response': response})
     
     except Exception as e:

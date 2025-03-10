@@ -7,6 +7,7 @@ import requests
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 from googletrans import Translator
+import asyncio
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -68,25 +69,27 @@ def initialize_system():
         logging.error(f"Error during system initialization: {e}")
         raise
 
-def detect_language(text):
+async def detect_language(text):
     try:
-        return translator.detect(text).lang
+        detection = await translator.detect(text)
+        return detection.lang
     except Exception as e:
         logging.error(f"Language detection failed: {e}")
         return "en"
 
-def translate_text(text, src_lang, dest_lang):
+async def translate_text(text, src_lang, dest_lang):
     try:
-        return translator.translate(text, src=src_lang, dest=dest_lang).text
+        translation = await translator.translate(text, src=src_lang, dest=dest_lang)
+        return translation.text
     except Exception as e:
         logging.error(f"Translation failed: {e}")
         return text
 
-def query_system(user_query):
+async def query_system(user_query):
     try:
-        query_lang = detect_language(user_query)
+        query_lang = await detect_language(user_query)
         if query_lang == "ta":
-            user_query = translate_text(user_query, src_lang="ta", dest_lang="en")
+            user_query = await translate_text(user_query, src_lang="ta", dest_lang="en")
 
         query_vector = np.array(sentence_model.encode([user_query], convert_to_tensor=False)).astype("float32")
         D, I = index.search(query_vector, k=1)
@@ -95,7 +98,7 @@ def query_system(user_query):
         response = generate_gemini_response(relevant_info)
 
         if query_lang == "ta":
-            response = translate_text(response, src_lang="en", dest_lang="ta")
+            response = await translate_text(response, src_lang="en", dest_lang="ta")
 
         return response, I, D, relevant_info
     except Exception as e:
