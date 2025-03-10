@@ -58,6 +58,7 @@ def initialize_system():
         if not os.path.exists(FAISS_INDEX_PATH):
             download_file(FAISS_INDEX_URL, FAISS_INDEX_PATH)
 
+        # Load only necessary data
         sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
         index = faiss.read_index(FAISS_INDEX_PATH)
 
