@@ -102,8 +102,9 @@ async def query_system(user_query):
 
         return response, I, D, relevant_info
     except Exception as e:
-        logging.error(f"Error processing query: {e}")
-        return "An error occurred while processing your request.", [], [], []
+        error_message = f"Error processing query: {str(e)}"
+        logging.error(error_message)
+        return error_message, [], [], []
 
 def get_relevant_info(indices, content_data):
     results = []
@@ -129,8 +130,9 @@ def generate_gemini_response(results):
         else:
             return "No response from Gemini."
     except Exception as e:
-        logging.error(f"Error generating content with Gemini: {e}")
-        return "Error generating response."
+        error_message = f"Error generating content with Gemini: {str(e)}"
+        logging.error(error_message)
+        return error_message
 
 def format_bullet_points(items):
     return "\n".join([f"* {item.strip()}" for item in items if item.strip()]) if items else "Not specified."

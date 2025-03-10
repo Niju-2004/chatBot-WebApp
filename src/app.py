@@ -53,7 +53,7 @@ def ask():
         if not user_query or len(user_query) > 500:
             return jsonify({'response': "Please enter a valid query (max 500 characters)."}), 400
         
-        # Run the asynchronous query_system function in a separate thread
+        # Run the asynchronous query_system function
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         response, _, _, _ = loop.run_until_complete(model.query_system(user_query))
@@ -62,8 +62,9 @@ def ask():
         return jsonify({'response': response})
     
     except Exception as e:
-        logging.error(f"Error processing query: {e}")
-        return jsonify({'response': "Oops! Something went wrong. Please try again later."}), 500
+        error_message = f"Error processing query: {str(e)}"
+        logging.error(error_message)
+        return jsonify({'response': error_message}), 500
 
 @app.route('/feedback', methods=['POST'])
 @limiter.limit("2 per minute")
@@ -80,8 +81,9 @@ def feedback():
 
         return jsonify({'success': True, 'message': "Thank you for your feedback!"})
     except Exception as e:
-        logging.error(f"Error processing feedback: {e}")
-        return jsonify({'success': False, 'message': "Oops! Something went wrong. Please try again later."}), 500
+        error_message = f"Error processing feedback: {str(e)}"
+        logging.error(error_message)
+        return jsonify({'success': False, 'message': error_message}), 500
 
 @app.route('/translations', methods=['GET'])
 def get_translations():
