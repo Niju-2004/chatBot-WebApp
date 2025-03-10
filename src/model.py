@@ -6,7 +6,7 @@ import logging
 import requests
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
-from google_trans_new import google_translator
+from googletrans import Translator  # Updated import
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +25,7 @@ generation_config = {
     "max_output_tokens": 2048
 }
 
-model = genai.GenerativeModel("gemini-pro", generation_config=generation_config)
+model = genai.GenerativeModel("gemini-1.5-pro-latest", generation_config=generation_config)
 
 CONTENT_JSON_URL = "https://raw.githubusercontent.com/Niju-2004/faiss-index-storage/main/content.json"
 FAISS_INDEX_URL = "https://raw.githubusercontent.com/Niju-2004/faiss-index-storage/main/vectors_faiss.index"
@@ -36,7 +36,7 @@ FAISS_INDEX_PATH = "vectors_faiss.index"
 sentence_model = None
 content = None
 index = None
-translator = google_translator()
+translator = Translator()  # Updated translator initialization
 
 def download_file(url, local_path):
     try:
@@ -52,15 +52,17 @@ def download_file(url, local_path):
 def initialize_system():
     global sentence_model, content, index
     try:
-        download_file(CONTENT_JSON_URL, CONTENT_JSON_PATH)
-        download_file(FAISS_INDEX_URL, FAISS_INDEX_PATH)
-        
+        if not os.path.exists(CONTENT_JSON_PATH):
+            download_file(CONTENT_JSON_URL, CONTENT_JSON_PATH)
+        if not os.path.exists(FAISS_INDEX_PATH):
+            download_file(FAISS_INDEX_URL, FAISS_INDEX_PATH)
+
         sentence_model = SentenceTransformer("all-MiniLM-L6-v2")
         index = faiss.read_index(FAISS_INDEX_PATH)
-        
+
         with open(CONTENT_JSON_PATH, "r", encoding="utf-8") as f:
             content = json.load(f)
-        
+
         logging.info("System initialized successfully.")
     except Exception as e:
         logging.error(f"Error during system initialization: {e}")
@@ -68,14 +70,14 @@ def initialize_system():
 
 def detect_language(text):
     try:
-        return translator.detect(text)[0]  # Returns the language code (e.g., 'en')
+        return translator.detect(text).lang  # Updated language detection
     except Exception as e:
         logging.error(f"Language detection failed: {e}")
         return "en"
 
 def translate_text(text, src_lang, dest_lang):
     try:
-        return translator.translate(text, lang_src=src_lang, lang_tgt=dest_lang)
+        return translator.translate(text, src=src_lang, dest=dest_lang).text  # Updated translation
     except Exception as e:
         logging.error(f"Translation failed: {e}")
         return text
@@ -85,16 +87,16 @@ def query_system(user_query):
         query_lang = detect_language(user_query)
         if query_lang == "ta":
             user_query = translate_text(user_query, src_lang="ta", dest_lang="en")
-        
+
         query_vector = np.array(sentence_model.encode([user_query], convert_to_tensor=False)).astype("float32")
         D, I = index.search(query_vector, k=1)
         relevant_info = get_relevant_info(I[0], content)
-        
+
         response = generate_gemini_response(relevant_info)
-        
+
         if query_lang == "ta":
             response = translate_text(response, src_lang="en", dest_lang="ta")
-        
+
         return response, I, D, relevant_info
     except Exception as e:
         logging.error(f"Error processing query: {e}")
@@ -131,3 +133,5 @@ def format_bullet_points(items):
     return "\n".join([f"* {item.strip()}" for item in items if item.strip()]) if items else "Not specified."
 
 initialize_system()
+
+# app.py and scripts.js remain the same.
