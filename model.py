@@ -8,6 +8,7 @@ from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
 from deep_translator import GoogleTranslator
 import asyncio
+from langdetect import detect  # Add this import
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -71,8 +72,7 @@ def initialize_system():
 
 async def detect_language(text):
     try:
-        from langdetect import detect
-        return detect(text)
+        return detect(text)  # Use langdetect for language detection
     except Exception as e:
         logging.error(f"Language detection failed: {e}")
         return "en"

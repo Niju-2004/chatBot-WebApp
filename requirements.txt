@@ -1,5 +1,6 @@
 Flask
 faiss-cpu
+langdetect
 sentence-transformers
 google-generativeai
 deep-translator
