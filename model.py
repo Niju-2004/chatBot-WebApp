@@ -23,7 +23,7 @@ generation_config = {
     "temperature": 0.7,
     "top_p": 1,
     "top_k": 1,
-    "max_output_tokens": 2048
+    "max_output_tokens": 500  # Reduced to minimize response size
 }
 
 model = genai.GenerativeModel("gemini-1.5-pro-latest", generation_config=generation_config)
@@ -71,7 +71,8 @@ def initialize_system():
 
 async def detect_language(text):
     try:
-        return GoogleTranslator.detect(text)
+        from langdetect import detect
+        return detect(text)
     except Exception as e:
         logging.error(f"Language detection failed: {e}")
         return "en"
@@ -128,10 +129,12 @@ def get_relevant_info(indices, content_data):
 
 def generate_gemini_response(results):
     try:
-        prompt = f"Provide a detailed explanation for the following veterinary conditions:\n{json.dumps(results, indent=2)}"
+        prompt = f"Provide a detailed explanation for the following veterinary conditions in a structured format:\n{json.dumps(results, indent=2)}"
         response = model.generate_content(prompt)
         if response and response.text:
-            return response.text
+            # Format the response with headings
+            formatted_response = format_response(response.text)
+            return formatted_response
         else:
             return "No response from Gemini."
     except Exception as e:
@@ -139,7 +142,12 @@ def generate_gemini_response(results):
         logging.error(error_message)
         return error_message
 
-def format_bullet_points(items):
-    return "\n".join([f"* {item.strip()}" for item in items if item.strip()]) if items else "Not specified."
+def format_response(response):
+    # Add headings to the response
+    formatted_response = response.replace("Disease name:", "\n**Disease name:**") \
+                                 .replace("Symptoms:", "\n**Symptoms:**") \
+                                 .replace("Treatment:", "\n**Treatment:**") \
+                                 .replace("Ingredients:", "\n**Ingredients:**")
+    return formatted_response
 
 initialize_system()

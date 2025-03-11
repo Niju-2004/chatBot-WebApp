@@ -2,14 +2,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageContainer = document.getElementById('message-container');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
-    const feedbackInput = document.getElementById('feedback-input');
-    const feedbackButton = document.getElementById('feedback-button');
     const langToggleTa = document.getElementById('lang-toggle-ta');
     const langToggleEn = document.getElementById('lang-toggle-en');
     const chatHeaderTitle = document.getElementById('chat-header-title');
     const welcomeMessage = document.getElementById('welcome-message');
     const chatbotDescription = document.getElementById('chatbot-description');
     const loadingIndicator = document.getElementById('loading-indicator');
+    const quickQuestions = document.querySelectorAll('.quick-question');
 
     let currentLanguage = localStorage.getItem('language') || 'en';
 
@@ -132,38 +131,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Feedback button
-    feedbackButton.addEventListener('click', async () => {
-        const feedbackText = feedbackInput.value.trim();
-        if (!feedbackText || feedbackText.length > 1000) {
-            alert("⚠️ Please enter valid feedback (max 1000 characters).");
-            return;
-        }
-
-        try {
-            const response = await fetch('/feedback', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ feedback: feedbackText })
-            });
-
-            const data = await response.json();
-            alert(data.message);
-            if (data.success) feedbackInput.value = ''; // Clear feedback input on success
-        } catch (error) {
-            console.error(error);
-            alert("❌ Error submitting feedback. Please try again later.");
-        }
+    // Handle predefined query buttons
+    quickQuestions.forEach(button => {
+        button.addEventListener('click', () => {
+            const query = button.getAttribute('data-question');
+            userInput.value = query;
+            sendButton.click();
+        });
     });
 
     // Handle "Enter" key in user input
     userInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendButton.click();
-    });
-
-    // Handle "Enter" key in feedback input
-    feedbackInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') feedbackButton.click();
     });
 
     // Initialize language on page load

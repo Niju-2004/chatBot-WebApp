@@ -33,9 +33,6 @@ translations = {
     }
 }
 
-# Ensure the feedback file is in a writable directory
-FEEDBACK_FILE_PATH = os.path.join(os.getenv('TEMP', '/tmp'), 'feedback.txt')
-
 # Manually initialize the system when the app starts
 model.initialize_system()
 
@@ -65,25 +62,6 @@ def ask():
         error_message = f"Error processing query: {str(e)}"
         logging.error(error_message)
         return jsonify({'response': error_message}), 500
-
-@app.route('/feedback', methods=['POST'])
-@limiter.limit("2 per minute")
-def feedback():
-    try:
-        data = request.json
-        feedback = data.get('feedback')
-        if not feedback:
-            return jsonify({'success': False, 'message': "Please enter your feedback."}), 400
-        
-        current_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open(FEEDBACK_FILE_PATH, 'a') as f:
-            f.write(f"{current_timestamp}: {feedback}\n")
-
-        return jsonify({'success': True, 'message': "Thank you for your feedback!"})
-    except Exception as e:
-        error_message = f"Error processing feedback: {str(e)}"
-        logging.error(error_message)
-        return jsonify({'success': False, 'message': error_message}), 500
 
 @app.route('/translations', methods=['GET'])
 def get_translations():
