@@ -6,7 +6,7 @@ import logging
 import requests
 from sentence_transformers import SentenceTransformer
 import google.generativeai as genai
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 import asyncio
 
 # Configure logging
@@ -37,7 +37,6 @@ FAISS_INDEX_PATH = "vectors_faiss.index"
 sentence_model = None
 content = None
 index = None
-translator = Translator()
 
 def download_file(url, local_path):
     try:
@@ -72,26 +71,31 @@ def initialize_system():
 
 async def detect_language(text):
     try:
-        detection = await translator.detect(text)
-        return detection.lang
+        return GoogleTranslator.detect(text)
     except Exception as e:
         logging.error(f"Language detection failed: {e}")
         return "en"
 
 async def translate_text(text, src_lang, dest_lang):
     try:
-        translation = await translator.translate(text, src=src_lang, dest=dest_lang)
-        return translation.text
+        return GoogleTranslator(source=src_lang, target=dest_lang).translate(text)
     except Exception as e:
         logging.error(f"Translation failed: {e}")
         return text
 
 async def query_system(user_query):
     try:
+        if len(user_query) > 500:
+            return "Query is too long. Please limit your query to 500 characters.", [], [], []
+
         query_lang = await detect_language(user_query)
         if query_lang == "ta":
             user_query = await translate_text(user_query, src_lang="ta", dest_lang="en")
 
+        # Preprocess the query
+        user_query = user_query.strip().lower()
+
+        # Encode the query
         query_vector = np.array(sentence_model.encode([user_query], convert_to_tensor=False)).astype("float32")
         D, I = index.search(query_vector, k=1)
         relevant_info = get_relevant_info(I[0], content)
